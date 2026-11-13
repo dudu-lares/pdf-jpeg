@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juntar Imagens em PDF - Rápido e Privado</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Biblioteca jsPDF via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Fonte Inter do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-700">
+
+    <!-- Cabeçalho -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
+                    <!-- Ícone SVG Documento/PDF -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Img2PDF Studio</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Junte suas imagens em um único PDF localmente</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                <span>100% Privado (No Navegador)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Toast / Notificação Flutuante (Substitui alert) -->
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Coluna Esquerda: Upload e Galeria de Imagens (8 colunas em telas grandes) -->
+            <div class="lg:col-span-8 space-y-6">
+                
+                <!-- Área de Dropzone -->
+                <div id="dropzone" class="relative group cursor-pointer bg-white border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-2xl p-8 sm:p-10 text-center transition-all duration-200 shadow-sm hover:shadow-md">
+                    <input type="file" id="file-input" multiple accept="image/jpeg, image/png, image/webp, image/gif" class="hidden">
+                    
+                    <div class="w-16 h-16 mx-auto mb-4 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    
+                    <h2 class="text-lg font-semibold text-slate-800 mb-1">Clique para escolher ou arraste suas imagens aqui</h2>
+                    <p class="text-sm text-slate-500 mb-4">Suporta JPG, PNG e WEBP. Selecione quantos arquivos desejar.</p>
+                    
+                    <button type="button" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-5 py-2.5 rounded-xl shadow-sm transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Selecionar Imagens
+                    </button>
+                </div>
+
+                <!-- Barra de Status e Ações da Lista -->
+                <div id="gallery-header" class="hidden flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2.5 py-1 rounded-lg" id="image-count">0 imagens</span>
+                        <span class="text-xs text-slate-500 hidden sm:inline">• Arraste os cartões ou use as setas para definir a ordem das páginas</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btn-sort-name" class="text-xs font-medium text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-3 py-2 rounded-xl transition-colors" title="Ordenar alfabeticamente">
+                            Ordenar A-Z
+                        </button>
+                        <button type="button" id="btn-clear-all" class="text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl transition-colors flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            Limpar Tudo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grid de Miniaturas das Imagens -->
+                <div id="image-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <!-- Os cartões das imagens serão inseridos aqui dinamicamente via JS -->
+                </div>
+
+                <!-- Estado Vazio Ilustrativo -->
+                <div id="empty-state" class="text-center py-12 px-4 bg-white/60 rounded-2xl border border-slate-200/60">
+                    <p class="text-sm text-slate-400">Nenhuma imagem adicionada ainda. Adicione imagens acima para começar a montar seu PDF.</p>
+                </div>
+
+            </div>
+
+            <!-- Coluna Direita: Configurações do PDF e Botão Gerar (4 colunas em telas grandes) -->
+            <div class="lg:col-span-4 lg:sticky lg:top-24">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                            </svg>
+                            Configurações do PDF
+                        </h3>
+                    </div>
+
+                    <!-- Nome do Arquivo -->
+                    <div>
+                        <label for="pdf-filename" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Nome do Arquivo</label>
+                        <div class="relative flex items-center">
+                            <input type="text" id="pdf-filename" value="meu-documento" placeholder="meu-documento" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 pr-12 transition-all">
+                            <span class="absolute right-3.5 text-xs font-semibold text-slate-400 select-none">.pdf</span>
+                        </div>
+                    </div>
+
+                    <!-- Tamanho da Página -->
+                    <div>
+                        <label for="page-size" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Tamanho da Página</label>
+                        <select id="page-size" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition-all">
+                            <option value="a4" selected>A4 (210 × 297 mm)</option>
+                            <option value="letter">Carta / Letter (216 × 279 mm)</option>
+                            <option value="fit">Ajustar ao tamanho da imagem</option>
+                        </select>
+                        <p id="fit-hint" class="hidden text-xs text-indigo-600 mt-1.5">Cada página terá exatamente as dimensões da respectiva imagem.</p>
+                    </div>
+
+                    <!-- Orientação da Página -->
+                    <div id="orientation-group">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Orientação</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" data-orientation="auto" class="orientation-btn active flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-700 text-xs font-medium transition-all">
+                                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Auto
+                            </button>
+                            <button type="button" data-orientation="portrait" class="orientation-btn flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium transition-all">
+                                <div class="w-3.5 h-5 border-2 border-current rounded-sm mb-1"></div>
+                                Retrato
+                            </button>
+                            <button type="button" data-orientation="landscape" class="orientation-btn flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium transition-all">
+                                <div class="w-5 h-3.5 border-2 border-current rounded-sm mb-1 mt-1.5"></div>
+                                Paisagem
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Margem -->
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Margem da Página</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" data-margin="0" class="margin-btn flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium transition-all">
+                                Sem margem
+                            </button>
+                            <button type="button" data-margin="10" class="margin-btn active flex items-center justify-center p-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-700 text-xs font-medium transition-all">
+                                Pequena
+                            </button>
+                            <button type="button" data-margin="20" class="margin-btn flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium transition-all">
+                                Grande
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botão Principal de Ação -->
+                    <div class="pt-2">
+                        <button type="button" id="btn-generate-pdf" disabled class="w-full py-3.5 px-6 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed shadow-md hover:shadow-lg disabled:shadow-none transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base">
+                            <svg id="btn-icon-download" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <!-- Spinner de carregamento oculto por padrão -->
+                            <svg id="btn-spinner" class="hidden animate-spin w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span id="btn-text">Juntar e Baixar PDF</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
+            Processamento 100% local no seu navegador. Suas imagens nunca são enviadas para nenhum servidor externo.
+        </div>
+    </footer>
+
+    <!-- Lógica da Aplicação -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Estado da aplicação
+            let imagesList = []; // Array de objetos: { id, file, name, dataUrl, width, height }
+            let selectedOrientation = 'auto'; // 'auto', 'portrait', 'landscape'
+            let selectedMargin = 10; // em milímetros (0, 10, 20)
+            let draggedIndex = null;
+
+            // Referências do DOM
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('file-input');
+            const imageGrid = document.getElementById('image-grid');
+            const galleryHeader = document.getElementById('gallery-header');
+            const emptyState = document.getElementById('empty-state');
+            const imageCountBadge = document.getElementById('image-count');
+            const btnGeneratePdf = document.getElementById('btn-generate-pdf');
+            const btnClearAll = document.getElementById('btn-clear-all');
+            const btnSortName = document.getElementById('btn-sort-name');
+            const pageSizeSelect = document.getElementById('page-size');
+            const orientationGroup = document.getElementById('orientation-group');
+            const fitHint = document.getElementById('fit-hint');
+            const pdfFilenameInput = document.getElementById('pdf-filename');
+            const toastContainer = document.getElementById('toast-container');
+
+            // --- Sistema de Notificação (Toast) ---
+            function showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                const colors = {
+                    info: 'bg-slate-800 text-white',
+                    success: 'bg-emerald-600 text-white',
+                    error: 'bg-rose-600 text-white'
+                };
+                
+                toast.className = `${colors[type]} px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-4 opacity-0 pointer-events-auto max-w-sm`;
+                toast.innerHTML = `<span>${message}</span>`;
+                
+                toastContainer.appendChild(toast);
+                
+                // Animar entrada
+                requestAnimationFrame(() => {
+                    toast.classList.remove('translate-y-4', 'opacity-0');
+                });
+
+                // Remover após 3.5 segundos
+                setTimeout(() => {
+                    toast.classList.add('translate-y-4', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            }
+
+            // --- Eventos de Upload (Clique e Drag & Drop) ---
+            dropzone.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFiles(e.target.files);
+                    fileInput.value = ''; // Resetar input para permitir reenviar o mesmo arquivo
+                }
+            });
+
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('border-indigo-500', 'bg-indigo-50/40');
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('border-indigo-500', 'bg-indigo-50/40');
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('border-indigo-500', 'bg-indigo-50/40');
+                if (e.dataTransfer.files.length > 0) {
+                    handleFiles(e.dataTransfer.files);
+                }
+            });
+
+            // --- Processamento das Imagens Carregadas ---
+            async function handleFiles(files) {
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+                const fileArray = Array.from(files);
+                let addedCount = 0;
+
+                for (const file of fileArray) {
+                    if (!validTypes.includes(file.type)) {
+                        showToast(`Arquivo ignorado (formato não suportado): ${file.name}`, 'error');
+                        continue;
+                    }
+
+                    try {
+                        const imageData = await readImageFile(file);
+                        imagesList.push(imageData);
+                        addedCount++;
+                    } catch (err) {
+                        console.error('Erro ao ler imagem:', err);
+                        showToast(`Erro ao carregar ${file.name}`, 'error');
+                    }
+                }
+
+                if (addedCount > 0) {
+                    renderGallery();
+                    showToast(`${addedCount} ${addedCount === 1 ? 'imagem adicionada' : 'imagens adicionadas'}!`, 'success');
+                }
+            }
+
+            // Lê o arquivo como DataURL e extrai dimensões naturais (largura e altura)
+            function readImageFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            // Normalizar imagens WebP/GIF para Canvas JPEG/PNG garantindo compatibilidade total com jsPDF
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.naturalWidth;
+                            canvas.height = img.naturalHeight;
+                            const ctx = canvas.getContext('2d');
+                            
+                            // Fundo branco caso seja PNG transparente e converta, ou mantém PNG se preferir
+                            const isPng = file.type === 'image/png';
+                            if (!isPng) {
+                                ctx.fillStyle = '#FFFFFF';
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            }
+                            ctx.drawImage(img, 0, 0);
+                            
+                            const format = isPng ? 'image/png' : 'image/jpeg';
+                            const cleanDataUrl = canvas.toDataURL(format, 0.92);
+
+                            resolve({
+                                id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                                name: file.name,
+                                dataUrl: cleanDataUrl,
+                                format: isPng ? 'PNG' : 'JPEG',
+                                width: img.naturalWidth,
+                                height: img.naturalHeight
+                            });
+                        };
+                        img.onerror = reject;
+                        img.src = event.target.result;
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // --- Renderização da Galeria e Controles de Ordem ---
+            function renderGallery() {
+                imageGrid.innerHTML = '';
+
+                if (imagesList.length === 0) {
+                    galleryHeader.classList.add('hidden');
+                    galleryHeader.classList.remove('flex');
+                    emptyState.classList.remove('hidden');
+                    btnGeneratePdf.disabled = true;
+                    return;
+                }
+
+                galleryHeader.classList.remove('hidden');
+                galleryHeader.classList.add('flex');
+                emptyState.classList.add('hidden');
+                btnGeneratePdf.disabled = false;
+
+                imageCountBadge.textContent = `${imagesList.length} ${imagesList.length === 1 ? 'página' : 'páginas'}`;
+
+                imagesList.forEach((item, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'group relative bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col cursor-grab active:cursor-grabbing';
+                    card.draggable = true;
+                    card.dataset.index = index;
+
+                    // Eventos de Drag & Drop para reordenar os cartões
+                    card.addEventListener('dragstart', (e) => {
+                        draggedIndex = index;
+                        card.classList.add('opacity-50', 'scale-95');
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+
+                    card.addEventListener('dragend', () => {
+                        card.classList.remove('opacity-50', 'scale-95');
+                        draggedIndex = null;
+                        document.querySelectorAll('#image-grid > div').forEach(el => el.classList.remove('ring-2', 'ring-indigo-500'));
+                    });
+
+                    card.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        if (draggedIndex !== null && draggedIndex !== index) {
+                            card.classList.add('ring-2', 'ring-indigo-500');
+                        }
+                    });
+
+                    card.addEventListener('dragleave', () => {
+                        card.classList.remove('ring-2', 'ring-indigo-500');
+                    });
+
+                    card.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        card.classList.remove('ring-2', 'ring-indigo-500');
+                        if (draggedIndex !== null && draggedIndex !== index) {
+                            const movedItem = imagesList.splice(draggedIndex, 1)[0];
+                            imagesList.splice(index, 0, movedItem);
+                            renderGallery();
+                        }
+                    });
+
+                    card.innerHTML = `
+                        <!-- Badge Número da Página -->
+                        <div class="absolute top-2.5 left-2.5 z-10 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold w-6 h-6 rounded-lg flex items-center justify-center shadow-sm">
+                            ${index + 1}
+                        </div>
+
+                        <!-- Botão Remover -->
+                        <button type="button" data-action="remove" data-index="${index}" title="Remover imagem" class="absolute top-2.5 right-2.5 z-10 bg-white/90 hover:bg-rose-600 text-slate-600 hover:text-white p-1.5 rounded-lg shadow-sm backdrop-blur-sm transition-colors">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+
+                        <!-- Miniatura da Imagem -->
+                        <div class="aspect-[3/4] w-full bg-slate-100 p-3 flex items-center justify-center overflow-hidden">
+                            <img src="${item.dataUrl}" alt="${item.name}" class="max-w-full max-h-full object-contain rounded shadow-sm pointer-events-none">
+                        </div>
+
+                        <!-- Rodapé do Cartão: Nome e Botões de Ordem -->
+                        <div class="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between gap-1">
+                            <span class="text-xs text-slate-600 truncate font-medium flex-1" title="${item.name}">${item.name}</span>
+                            
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button type="button" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''} title="Mover para antes" class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                                    <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </button>
+                                <button type="button" data-action="down" data-index="${index}" ${index === imagesList.length - 1 ? 'disabled' : ''} title="Mover para depois" class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                                    <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    imageGrid.appendChild(card);
+                });
+            }
+
+            // Delegação de eventos para os botões nos cartões (Remover, Subir, Descer)
+            imageGrid.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+
+                const action = btn.dataset.action;
+                const index = parseInt(btn.dataset.index, 10);
+
+                if (action === 'remove') {
+                    imagesList.splice(index, 1);
+                    renderGallery();
+                } else if (action === 'up' && index > 0) {
+                    [imagesList[index - 1], imagesList[index]] = [imagesList[index], imagesList[index - 1]];
+                    renderGallery();
+                } else if (action === 'down' && index < imagesList.length - 1) {
+                    [imagesList[index + 1], imagesList[index]] = [imagesList[index], imagesList[index + 1]];
+                    renderGallery();
+                }
+            });
+
+            // Ordenar alfabeticamente por nome de arquivo
+            btnSortName.addEventListener('click', () => {
+                imagesList.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+                renderGallery();
+                showToast('Imagens ordenadas por nome (A-Z)');
+            });
+
+            // Limpar todas as imagens
+            btnClearAll.addEventListener('click', () => {
+                imagesList = [];
+                renderGallery();
+                showToast('Lista de imagens limpa');
+            });
+
+            // --- Controles de Configuração do PDF ---
+            pageSizeSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'fit') {
+                    orientationGroup.classList.add('opacity-50', 'pointer-events-none');
+                    fitHint.classList.remove('hidden');
+                } else {
+                    orientationGroup.classList.remove('opacity-50', 'pointer-events-none');
+                    fitHint.classList.add('hidden');
+                }
+            });
+
+            // Seleção de Orientação
+            document.querySelectorAll('.orientation-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.orientation-btn').forEach(b => {
+                        b.className = 'orientation-btn flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium transition-all';
+                    });
+                    btn.className = 'orientation-btn active flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-700 text-xs font-medium transition-all';
+                    selectedOrientation = btn.dataset.orientation;
+                });
+            });
+
+            // Seleção de Margem
+            document.querySelectorAll('.margin-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.margin-btn').forEach(b => {
+                        b.className = 'margin-btn flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium transition-all';
+                    });
+                    btn.className = 'margin-btn active flex items-center justify-center p-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-700 text-xs font-medium transition-all';
+                    selectedMargin = parseInt(btn.dataset.margin, 10);
+                });
+            });
+
+            // --- Geração do PDF com jsPDF ---
+            btnGeneratePdf.addEventListener('click', async () => {
+                if (imagesList.length === 0) return;
+
+                // Estado visual de carregamento
+                const btnText = document.getElementById('btn-text');
+                const btnIcon = document.getElementById('btn-icon-download');
+                const btnSpinner = document.getElementById('btn-spinner');
+
+                btnGeneratePdf.disabled = true;
+                btnIcon.classList.add('hidden');
+                btnSpinner.classList.remove('hidden');
+                btnText.textContent = 'Gerando PDF...';
+
+                // Pequeno delay para permitir a renderização do spinner na UI
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const pageSizeMode = pageSizeSelect.value; // 'a4', 'letter', 'fit'
+                    const margin = selectedMargin;
+                    let doc = null;
+
+                    imagesList.forEach((img, index) => {
+                        // Determinar orientação da página atual
+                        let pageOrientation = selectedOrientation;
+                        if (pageOrientation === 'auto') {
+                            pageOrientation = img.width > img.height ? 'landscape' : 'portrait';
+                        }
+
+                        if (pageSizeMode === 'fit') {
+                            // Converter pixels para milímetros (aprox 96 DPI -> 1px = 0.264583 mm)
+                            const pxToMm = 0.264583;
+                            const imgWidthMm = img.width * pxToMm;
+                            const imgHeightMm = img.height * pxToMm;
+                            const totalW = imgWidthMm + (margin * 2);
+                            const totalH = imgHeightMm + (margin * 2);
+                            const fitOrientation = totalW > totalH ? 'landscape' : 'portrait';
+
+                            if (index === 0) {
+                                doc = new jsPDF({
+                                    orientation: fitOrientation,
+                                    unit: 'mm',
+                                    format: [totalW, totalH]
+                                });
+                            } else {
+                                doc.addPage([totalW, totalH], fitOrientation);
+                            }
+
+                            doc.addImage(img.dataUrl, img.format, margin, margin, imgWidthMm, imgHeightMm, undefined, 'FAST');
+
+                        } else {
+                            // Formato Padrão (A4 ou Letter)
+                            if (index === 0) {
+                                doc = new jsPDF({
+                                    orientation: pageOrientation,
+                                    unit: 'mm',
+                                    format: pageSizeMode
+                                });
+                            } else {
+                                doc.addPage(pageSizeMode, pageOrientation);
+                            }
+
+                            const pageWidth = doc.internal.pageSize.getWidth();
+                            const pageHeight = doc.internal.pageSize.getHeight();
+
+                            // Área útil descontando as margens
+                            const usableWidth = pageWidth - (margin * 2);
+                            const usableHeight = pageHeight - (margin * 2);
+
+                            // Calcular escala proporcional (contain) para a imagem caber sem distorcer
+                            const imgRatio = img.width / img.height;
+                            const areaRatio = usableWidth / usableHeight;
+
+                            let finalWidth, finalHeight;
+
+                            if (imgRatio > areaRatio) {
+                                finalWidth = usableWidth;
+                                finalHeight = usableWidth / imgRatio;
+                            } else {
+                                finalHeight = usableHeight;
+                                finalWidth = usableHeight * imgRatio;
+                            }
+
+                            // Centralizar a imagem na página
+                            const xOffset = margin + (usableWidth - finalWidth) / 2;
+                            const yOffset = margin + (usableHeight - finalHeight) / 2;
+
+                            doc.addImage(img.dataUrl, img.format, xOffset, yOffset, finalWidth, finalHeight, undefined, 'FAST');
+                        }
+                    });
+
+                    // Sanitizar nome do arquivo
+                    let filename = pdfFilenameInput.value.trim() || 'meu-documento';
+                    filename = filename.replace(/[^a-z0-9_\-\sáéíóúãõâêîôûçÁÉÍÓÚÃÕÂÊÎÔÛÇ]/gi, '').trim();
+                    if (!filename.toLowerCase().endsWith('.pdf')) {
+                        filename += '.pdf';
+                    }
+
+                    // Baixar arquivo PDF
+                    doc.save(filename);
+                    showToast('PDF gerado e baixado com sucesso!', 'success');
+
+                } catch (error) {
+                    console.error('Erro ao gerar PDF:', error);
+                    showToast('Ocorreu um erro ao gerar o PDF. Tente novamente.', 'error');
+                } finally {
+                    // Restaurar estado do botão
+                    btnGeneratePdf.disabled = imagesList.length === 0;
+                    btnIcon.classList.remove('hidden');
+                    btnSpinner.classList.add('hidden');
+                    btnText.textContent = 'Juntar e Baixar PDF';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
